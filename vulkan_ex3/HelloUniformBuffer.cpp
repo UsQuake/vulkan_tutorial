@@ -109,7 +109,7 @@ struct UniformBufferObject {
     glm::mat4 view;
     glm::mat4 proj;
 };
-class HelloUniformApplication {
+class ApplicationA {
 public:
     void run() {
         initWindow();
@@ -135,9 +135,11 @@ private:
     VkDeviceMemory m_vertexBufferMemory;
     VkBuffer m_indexBuffer;
     VkDeviceMemory m_indexBufferMemory;
-    std::vector<VkBuffer> m_uniformBuffers;
-    std::vector<VkDeviceMemory> m_uniformBuffersMemory;
+    std::vector<VkBuffer> m_uniformBuffersA;
+    std::vector<VkDeviceMemory> m_uniformBuffersMemoryA;
 
+    std::vector<VkBuffer> m_uniformBufferB;
+    std::vector<VkDeviceMemory> m_uniformBuffersMemoryB;
     VkSwapchainKHR m_swapChain;
     std::vector<VkImage> m_swapChainImages;
     VkFormat m_swapChainImageFormat;
@@ -152,7 +154,7 @@ private:
     VkPipeline m_graphicsPipeline;
     VkDescriptorSetLayout m_descSetLayout;
     VkDescriptorPool m_descPool;
-    std::vector<VkDescriptorSet> m_descSets;
+    std::vector<VkDescriptorSet> m_descSetsA;
 
     VkCommandPool m_commandPool;
     std::vector<VkCommandBuffer> m_commandBuffers;
@@ -172,7 +174,7 @@ private:
     }
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-        auto app = reinterpret_cast<HelloUniformApplication*>(glfwGetWindowUserPointer(window));
+        auto app = reinterpret_cast<ApplicationA*>(glfwGetWindowUserPointer(window));
         app->m_IsFramebufferResized = true;
     }
 
@@ -264,7 +266,7 @@ private:
         }
         m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
 
-        updateUniformBuffer(imageIndex);
+        updateUniformBufferA(imageIndex);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -313,7 +315,7 @@ private:
 
         m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
-    void updateUniformBuffer(uint32_t currentImage)
+    void updateUniformBufferA(uint32_t currentImage)
     {
         static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -325,10 +327,27 @@ private:
         ubo.proj = glm::perspective(glm::radians(45.0f), m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
         void* pData;
-        vkMapMemory(m_device, m_uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &pData);
+        vkMapMemory(m_device, m_uniformBuffersMemoryA[currentImage], 0, sizeof(ubo), 0, &pData);
         
         memcpy(pData, &ubo, sizeof(ubo));
-        vkUnmapMemory(m_device, m_uniformBuffersMemory[currentImage]);
+        vkUnmapMemory(m_device, m_uniformBuffersMemoryA[currentImage]);
+    }
+    void updateUniformBufferB(uint32_t currentImage)
+    {
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+        UniformBufferObject ubo{};
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.proj = glm::perspective(glm::radians(45.0f), m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 10.0f);
+        ubo.proj[1][1] *= -1;
+        void* pData;
+        vkMapMemory(m_device, m_uniformBuffersMemoryB[currentImage], 0, sizeof(ubo), 0, &pData);
+
+        memcpy(pData, &ubo, sizeof(ubo));
+        vkUnmapMemory(m_device, m_uniformBuffersMemoryB[currentImage]);
     }
     void createInstance() {
 
@@ -543,8 +562,8 @@ private:
 
         for (size_t i = 0; i < m_swapChainImages.size(); i++)
         {
-            vkDestroyBuffer(m_device, m_uniformBuffers[i], nullptr);
-            vkFreeMemory(m_device, m_uniformBuffersMemory[i], nullptr);
+            vkDestroyBuffer(m_device, m_uniformBuffersA[i], nullptr);
+            vkFreeMemory(m_device, m_uniformBuffersMemoryA[i], nullptr);
         }
         vkDestroyDescriptorPool(m_device, m_descPool, nullptr);
 
@@ -942,11 +961,11 @@ private:
     void createUniformBuffer() {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-        m_uniformBuffers.resize(m_swapChainImages.size());
-        m_uniformBuffersMemory.resize(m_swapChainImages.size());
+        m_uniformBuffersA.resize(m_swapChainImages.size());
+        m_uniformBuffersMemoryA.resize(m_swapChainImages.size());
 
         for (size_t i = 0; i < m_swapChainImages.size(); i++) {
-            createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformBuffers[i], m_uniformBuffersMemory[i]);
+            createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformBuffersA[i], m_uniformBuffersMemoryA[i]);
         }
     }
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
@@ -1017,7 +1036,7 @@ private:
             VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(m_commandBuffers[i], 0, 1, vertexBuffers, offsets);
             vkCmdBindIndexBuffer(m_commandBuffers[i], m_indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-            vkCmdBindDescriptorSets(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descSets[i], 0, nullptr);
+            vkCmdBindDescriptorSets(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descSetsA[i], 0, nullptr);
             vkCmdDrawIndexed(m_commandBuffers[i], static_cast<uint32_t>(g_indices.size()), 1, 0, 0, 0);
            
             vkCmdEndRenderPass(m_commandBuffers[i]);
@@ -1103,8 +1122,8 @@ private:
         allocInfo.descriptorSetCount = static_cast<uint32_t>(m_swapChainImages.size());
         allocInfo.pSetLayouts = layouts.data();
 
-        m_descSets.resize(m_swapChainImages.size());
-        if (vkAllocateDescriptorSets(m_device, &allocInfo, m_descSets.data()) != VK_SUCCESS)
+        m_descSetsA.resize(m_swapChainImages.size());
+        if (vkAllocateDescriptorSets(m_device, &allocInfo, m_descSetsA.data()) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to allocate descriptor sets!");
 
@@ -1113,13 +1132,13 @@ private:
         for (size_t i = 0; i < m_swapChainImages.size(); i++)
         {
             VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_uniformBuffers[i];
+            bufferInfo.buffer = m_uniformBuffersA[i];
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
             VkWriteDescriptorSet descriptorWrite{};
             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = m_descSets[i];
+            descriptorWrite.dstSet = m_descSetsA[i];
             descriptorWrite.dstBinding = 0;
             descriptorWrite.dstArrayElement = 0;
 
@@ -1290,7 +1309,7 @@ private:
 };
 
 int main() {
-    HelloUniformApplication app;
+    ApplicationA app;
 
     try {
         app.run();

@@ -61,7 +61,7 @@ struct SwapChainSupportDetails {
 
 };
 
-class HelloUniformApplication {
+class ApplicationA {
 public:
     void run() {
         initWindow();
@@ -114,7 +114,7 @@ private:
     }
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-        auto app = reinterpret_cast<HelloUniformApplication*>(glfwGetWindowUserPointer(window));
+        auto app = reinterpret_cast<ApplicationA*>(glfwGetWindowUserPointer(window));
         app->m_IsFramebufferResized = true;
     }
 
@@ -534,9 +534,9 @@ private:
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependency.srcAccessMask = 0;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
         renderPassInfo.dependencyCount = 1;
@@ -974,7 +974,7 @@ private:
 };
 
 int main() {
-    HelloUniformApplication app;
+    ApplicationA app;
 
     try {
         app.run();
