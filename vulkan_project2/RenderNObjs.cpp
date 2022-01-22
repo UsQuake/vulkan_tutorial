@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <set>
 #include <fstream>
+#include <cmath>
 #include <array>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -20,13 +21,8 @@
 #include <stb_image.h>
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
+#include "VKUtil.h"
 
-const std::vector<const char*> g_validationLayers = {
-    "VK_LAYER_KHRONOS_validation"
-};
-const std::vector<const char*> g_deviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -34,24 +30,7 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
-VkResult CreateDebugUtilMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-    VkDebugUtilsMessengerEXT* pDebugMessenger) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
 
-    }
-    else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-void DetroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily; //널 안정성을 위해 굳이 optional쓴듯..?스읍;;
@@ -134,9 +113,7 @@ public:
     }
 
 private:
-    UniformBufferObject m_animTransform;
     GLFWwindow* m_pwindow;
-    int m_InputKeycode = 0;
 
     VkInstance m_instance;
     VkDebugUtilsMessengerEXT m_debugMessenger;
@@ -204,7 +181,6 @@ private:
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
         m_pwindow = glfwCreateWindow(WIDTH, HEIGHT, "Vertex Test", nullptr, nullptr);
-        glfwSetKeyCallback(m_pwindow, keyboardPressCallback);
         glfwSetWindowUserPointer(m_pwindow, this);
         glfwSetFramebufferSizeCallback(m_pwindow, framebufferResizeCallback);
     }
@@ -213,11 +189,7 @@ private:
         auto app = reinterpret_cast<ApplicationA*>(glfwGetWindowUserPointer(window));
         app->m_IsFramebufferResized = true;
     }
-    static void keyboardPressCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-        auto app = reinterpret_cast<ApplicationA*>(glfwGetWindowUserPointer(window));
-        app->m_InputKeycode = key;
-        std::cout << app->m_InputKeycode << std::endl;
-    }
+    
     void initVulkan() {
         createInstance();
         setupDebugMessengenger();
@@ -250,9 +222,7 @@ private:
         createCommandBuffers();
 
         createSyncObjects();
-        m_animTransform.model = glm::mat4(1.0f);
-        m_animTransform.view = glm::mat4(1.0f);
-        m_animTransform.proj = glm::mat4(1.0f);
+
     }
 
     void mainLoop() {
@@ -372,7 +342,6 @@ private:
 
         m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
-
     void updateUniformBufferA(uint32_t currentImage)
     {
         static auto startTime = std::chrono::high_resolution_clock::now();
@@ -395,30 +364,14 @@ private:
 
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-       
-        
-        switch (m_InputKeycode) {
-        case 68:
-            m_animTransform.model = glm::translate(m_animTransform.model, glm::vec3(0.0f, 0.0001f, 0.0f));
-            break;
-        case 65:
-            m_animTransform.model = glm::translate(m_animTransform.model, glm::vec3(0.0f, -0.0001f, 0.0f));
-            break;
-        case 87:
-            m_animTransform.model = glm::translate(m_animTransform.model, glm::vec3(0.0001f, 0.0f, 0.0f));
-            break;
-        case 83:
-            m_animTransform.model = glm::translate(m_animTransform.model, glm::vec3(-0.0001f, 0.0f, 0.0f));
-            break;
-        default:
-            break;
-        }
-        m_animTransform.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        m_animTransform.proj = glm::perspective(glm::radians(45.0f), m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 10.0f);
-        m_animTransform.proj[1][1] *= -1;
+        UniformBufferObject ubo{};
+        ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, sinf(time), 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.proj = glm::perspective(glm::radians(45.0f), m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 10.0f);
+        ubo.proj[1][1] *= -1;
         void* pData;
-        vkMapMemory(m_device, m_uniformBuffersMemoryB[currentImage], 0, sizeof(m_animTransform), 0, &pData);
-        memcpy(pData, &m_animTransform, sizeof(m_animTransform));
+        vkMapMemory(m_device, m_uniformBuffersMemoryB[currentImage], 0, sizeof(ubo), 0, &pData);
+        memcpy(pData, &ubo, sizeof(ubo));
         vkUnmapMemory(m_device, m_uniformBuffersMemoryB[currentImage]);
     }
     void createInstance() {
@@ -974,7 +927,7 @@ private:
 
         if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
         {
-            throw std::runtime_error("failed to create vertex buffer!");
+            throw std::runtime_error("failed to create buffer!");
         }
 
         VkMemoryRequirements memRequirements;
@@ -992,7 +945,7 @@ private:
         }
         vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
     }
-    VkCommandBuffer beginSingleTimeCommands()
+    VkCommandBuffer beginSingleTimeCommands(VkDevice& target_device)
     {
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1001,7 +954,7 @@ private:
         allocInfo.commandBufferCount = 1;
 
         VkCommandBuffer commandBuffer;
-        vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer);
+        vkAllocateCommandBuffers(target_device, &allocInfo, &commandBuffer);
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1011,7 +964,7 @@ private:
         return commandBuffer;
 
     }
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer)
+    void endSingleTimeCommands(VkDevice &target_device, VkCommandBuffer commandBuffer)
     {
         vkEndCommandBuffer(commandBuffer);
 
@@ -1026,16 +979,16 @@ private:
         vkFreeCommandBuffers(m_device, m_commandPool, 1, &commandBuffer);
 
     }
-    void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) {
+    void copyBuffer(VkDevice &target_device, VkBuffer src, VkBuffer dst, VkDeviceSize size) {
 
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        VkCommandBuffer commandBuffer = beginSingleTimeCommands(target_device);
         VkBufferCopy copyRegion{};
         copyRegion.size = size;
         vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
-        endSingleTimeCommands(commandBuffer);
+        endSingleTimeCommands(target_device, commandBuffer);
     }
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    void copyBufferToImage(VkDevice &target_device, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+        VkCommandBuffer commandBuffer = beginSingleTimeCommands(target_device);
         VkBufferImageCopy region{};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
@@ -1058,10 +1011,10 @@ private:
             1,
             &region
         );
-        endSingleTimeCommands(commandBuffer);
+        endSingleTimeCommands(target_device, commandBuffer);
     }
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    void transitionImageLayout(VkDevice& target_device, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
+        VkCommandBuffer commandBuffer = beginSingleTimeCommands(target_device);
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = oldLayout;
@@ -1122,7 +1075,7 @@ private:
             0, nullptr,
             0, nullptr,
             1, &barrier);
-        endSingleTimeCommands(commandBuffer);
+        endSingleTimeCommands(target_device, commandBuffer);
     }
     void createVertexBuffer()
     {
@@ -1139,7 +1092,7 @@ private:
         vkUnmapMemory(m_device, stagingBufferMemory);
 
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexBuffer, m_vertexBufferMemory);
-        copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
+        copyBuffer(m_device, stagingBuffer, m_vertexBuffer, bufferSize);
 
         vkDestroyBuffer(m_device, stagingBuffer, nullptr);
         vkFreeMemory(m_device, stagingBufferMemory, nullptr);
@@ -1159,7 +1112,7 @@ private:
 
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexBuffer, m_indexBufferMemory);
 
-        copyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
+        copyBuffer(m_device, stagingBuffer, m_indexBuffer, bufferSize);
 
         vkDestroyBuffer(m_device, stagingBuffer, nullptr);
         vkFreeMemory(m_device, stagingBufferMemory, nullptr);
@@ -1206,8 +1159,8 @@ private:
         createImage(texWidth, texHeight, m_mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_textureImage, m_textureImageMemory);
 
-        transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_mipLevels);
-        copyBufferToImage(stagingBuffer, m_textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+        transitionImageLayout(m_device, m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_mipLevels);
+        copyBufferToImage(m_device, stagingBuffer, m_textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
         vkDestroyBuffer(m_device, stagingBuffer, nullptr);
         vkFreeMemory(m_device, stagingBufferMemory, nullptr);
@@ -1226,7 +1179,7 @@ private:
         {
             throw std::runtime_error("texture image format does not support linear blitting!");
         }
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        VkCommandBuffer commandBuffer = beginSingleTimeCommands(m_device);
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -1304,7 +1257,7 @@ private:
             0, nullptr,
             1, &barrier);
 
-        endSingleTimeCommands(commandBuffer);
+        endSingleTimeCommands(m_device, commandBuffer);
     }
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
     {
@@ -1442,7 +1395,7 @@ private:
             m_depthImageMemory);
         m_depthImageView = createImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 
-        transitionImageLayout(m_depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
+        transitionImageLayout(m_device, m_depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
 
 
     }
