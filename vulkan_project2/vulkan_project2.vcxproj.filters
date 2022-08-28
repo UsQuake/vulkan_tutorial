@@ -30,12 +30,6 @@
     <ClCompile Include="RenderNObjs.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="소스.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderingManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="main.frag">
@@ -55,11 +49,23 @@
     <ClInclude Include="RenderableObject.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="RenderingManager.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="VKUtil.h">
       <Filter>헤더 파일\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="BufferDef.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryPools.h">
+      <Filter>헤더 파일\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="OBJLoader.h">
+      <Filter>헤더 파일\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

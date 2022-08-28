@@ -155,9 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="RenderingManager.cpp" />
     <ClCompile Include="RenderNObjs.cpp" />
-    <ClCompile Include="소스.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="frag.spv" />
@@ -166,8 +164,12 @@
     <None Include="vert.spv" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BufferDef.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="MemoryPools.h" />
+    <ClInclude Include="OBJLoader.h" />
     <ClInclude Include="RenderableObject.h" />
-    <ClInclude Include="RenderingManager.h" />
     <ClInclude Include="VKUtil.h" />
   </ItemGroup>
   <ItemGroup>

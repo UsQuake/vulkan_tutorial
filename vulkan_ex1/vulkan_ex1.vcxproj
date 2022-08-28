@@ -133,7 +133,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.189.2\Include;D:\API_SDK\glfw-3.3.4.bin.WIN64\include;C:\VulkanSDK\1.2.189.2\Third-Party\Include;C:\VulkanSDK\1.2.189.2\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <IntrinsicFunctions>false</IntrinsicFunctions>
     </ClCompile>
     <Link>
@@ -153,6 +153,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.189.2\Include;</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

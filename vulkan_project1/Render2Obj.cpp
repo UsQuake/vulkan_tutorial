@@ -18,6 +18,7 @@
 #include <chrono>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
 const uint32_t WIDTH = 1920;
 const uint32_t HEIGHT = 1080;
 
@@ -116,7 +117,7 @@ const std::vector<Vertex> g_vertices = {
 };
 const std::vector<uint16_t> g_indices = {
     0, 1, 2, 2, 3, 0,
-     4, 5, 6, 6, 7, 4
+     0, 1, 2, 2, 3, 0
 };
 
 struct UniformBufferObject {
@@ -136,7 +137,7 @@ public:
 private:
     UniformBufferObject m_animTransform;
     GLFWwindow* m_pwindow;
-    int m_InputKeycode = 0;
+    int m_inputKeycode = 0;
 
     VkInstance m_instance;
     VkDebugUtilsMessengerEXT m_debugMessenger;
@@ -215,8 +216,8 @@ private:
     }
     static void keyboardPressCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
         auto app = reinterpret_cast<ApplicationA*>(glfwGetWindowUserPointer(window));
-        app->m_InputKeycode = key;
-        std::cout << app->m_InputKeycode << std::endl;
+        app->m_inputKeycode = key;
+        std::cout << app->m_inputKeycode << std::endl;
     }
     void initVulkan() {
         createInstance();
@@ -397,7 +398,7 @@ private:
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
        
         
-        switch (m_InputKeycode) {
+        switch (m_inputKeycode) {
         case 68:
             m_animTransform.model = glm::translate(m_animTransform.model, glm::vec3(0.0f, 0.0001f, 0.0f));
             break;
@@ -1549,7 +1550,7 @@ private:
             vkCmdDrawIndexed(m_commandBuffers[i], 6, 1, 0, 0, 0);
 
             vkCmdBindDescriptorSets(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descSetsB[i], 0, nullptr);
-            vkCmdDrawIndexed(m_commandBuffers[i], 6, 1, 0, 4, 0);
+            vkCmdDrawIndexed(m_commandBuffers[i], 6, 1, 6, 4, 0);
 
             vkCmdEndRenderPass(m_commandBuffers[i]);
             if (vkEndCommandBuffer(m_commandBuffers[i]) != VK_SUCCESS) {
